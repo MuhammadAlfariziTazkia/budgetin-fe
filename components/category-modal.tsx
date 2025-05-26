@@ -61,7 +61,7 @@ export function CategoryModal({ open, onOpenChange, category, onSuccess }: Categ
     try {
       const url = category
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/private/category/${category.id}`
-        : "http://localhost:8080/api/private/category"
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/private/category`
 
       const method = category ? "PUT" : "POST"
 

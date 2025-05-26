@@ -103,7 +103,7 @@ export default function DashboardPage() {
     if (!headers) return
 
     try {
-      const response = await fetch("http://localhost:8080/api/private/transaction", { headers })
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/private/transaction`, { headers })
       const data = await response.json()
       if (response.ok) {
         setTransactions(data.data)
