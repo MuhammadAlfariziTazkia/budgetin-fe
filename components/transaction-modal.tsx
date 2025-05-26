@@ -81,7 +81,7 @@ export function TransactionModal({ open, onOpenChange, transaction, categories, 
 
     try {
       const url = transaction
-        ? `http://localhost:8080/api/private/transaction/${transaction.id}`
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/private/transaction/${transaction.id}`
         : "http://localhost:8080/api/private/transaction"
 
       const method = transaction ? "PUT" : "POST"

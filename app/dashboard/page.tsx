@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/private/category?year=${selectedYear}&month=${selectedMonth}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/private/category?year=${selectedYear}&month=${selectedMonth}`,
         { headers },
       )
       const data = await response.json()
@@ -132,7 +132,7 @@ export default function DashboardPage() {
     if (!headers) return
 
     try {
-      const response = await fetch(`http://localhost:8080/api/private/category/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/private/category/${id}`, {
         method: "DELETE",
         headers,
       })
@@ -154,7 +154,7 @@ export default function DashboardPage() {
     if (!headers) return
 
     try {
-      const response = await fetch(`http://localhost:8080/api/private/transaction/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/private/transaction/${id}`, {
         method: "DELETE",
         headers,
       })
