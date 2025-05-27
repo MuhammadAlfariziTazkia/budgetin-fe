@@ -9,11 +9,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Wallet, Plus, Edit, Trash2, LogOut, CircleUser, ChevronLeft, ChevronRight } from "lucide-react"
+import { Wallet, Plus, Edit, Trash2, LogOut, ChevronLeft, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { CategoryModal } from "@/components/category-modal"
 import { TransactionModal } from "@/components/transaction-modal"
 import { ConfirmModal } from "@/components/confirm-modal"
+
+interface User {
+  id: string
+  email: string
+  currency: string
+  name: string
+}
 
 interface Category {
   id: string
@@ -38,6 +45,7 @@ interface Transaction {
 const ITEMS_PER_PAGE = 10
 
 export default function DashboardPage() {
+  const [user, setUser] = useState<User | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
@@ -51,7 +59,6 @@ export default function DashboardPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [deleteItem, setDeleteItem] = useState<{ type: "category" | "transaction"; id: string } | null>(null)
-  const [userCurrency, setUserCurrency] = useState("IDR")
   const router = useRouter()
   const { toast } = useToast()
 
@@ -81,6 +88,29 @@ export default function DashboardPage() {
     return {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+    }
+  }
+
+  const fetchUser = async () => {
+    const headers = getAuthHeaders()
+    if (!headers) return
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/private/user`, { headers })
+      const data = await response.json()
+      if (response.ok) {
+        setUser(data.data)
+      } else {
+        // If user fetch fails, likely token is invalid
+        localStorage.removeItem("token")
+        router.push("/login")
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch user data",
+        variant: "destructive",
+      })
     }
   }
 
@@ -132,9 +162,15 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    fetchCategories()
-    fetchTransactions()
-  }, [selectedMonth, selectedYear])
+    fetchUser()
+  }, [])
+
+  useEffect(() => {
+    if (user) {
+      fetchCategories()
+      fetchTransactions()
+    }
+  }, [selectedMonth, selectedYear, user])
 
   useEffect(() => {
     let filtered = transactions
@@ -200,7 +236,7 @@ export default function DashboardPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: userCurrency,
+      currency: user?.currency || "IDR",
       minimumFractionDigits: 0,
     }).format(amount)
   }
@@ -233,6 +269,15 @@ export default function DashboardPage() {
     return "border-blue-500/30"
   }
 
+  const getUserInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
   const totalBudget = categories.reduce((sum, category) => sum + category.budget_amount, 0)
   const totalRemaining = categories.reduce(
     (sum, category) => sum + (category.remaining_amount || category.budget_amount),
@@ -244,6 +289,18 @@ export default function DashboardPage() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
   const currentTransactions = filteredTransactions.slice(startIndex, endIndex)
+
+  // Show loading state while user data is being fetched
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <Wallet className="h-12 w-12 text-blue-500 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -270,13 +327,13 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback className="bg-blue-600 text-white text-xl">
-                    <CircleUser className="h-8 w-8" />
+                  <AvatarFallback className="bg-blue-600 text-white text-xl font-semibold">
+                    {getUserInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">John Doe</h3>
-                  <p className="text-gray-400">john.doe@example.com</p>
+                  <h3 className="text-xl font-semibold text-white">{user.name}</h3>
+                  <p className="text-gray-400">{user.email}</p>
                 </div>
               </div>
             </CardContent>
